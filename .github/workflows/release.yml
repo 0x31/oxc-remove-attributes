@@ -24,6 +24,6 @@ jobs:
       - run: yarn typecheck
       - run: yarn test:run
       - run: yarn build
+      # Auth + signing both come from the GitHub Actions OIDC identity.
+      # Requires Trusted Publishing to be configured for this package on npmjs.com.
       - run: npm publish --provenance --access public
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
