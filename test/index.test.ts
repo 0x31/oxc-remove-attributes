@@ -1,3 +1,4 @@
+import { test as fcTest, fc } from "@fast-check/vitest";
 import { describe, expect, it } from "vitest";
 import { removeAttributes } from "../src/index.js";
 
@@ -144,5 +145,165 @@ describe("plugin metadata", () => {
   it("respects custom enforce", () => {
     const plugin = removeAttributes({ enforce: "post" }) as { enforce: string };
     expect(plugin.enforce).toBe("post");
+  });
+});
+
+describe("JSX shape edge cases", () => {
+  it("strips a shorthand (valueless) attribute", async () => {
+    const result = await runTransform(`const x = <div data-testid className="bar" />;`);
+    expect(result?.code).toBe(`const x = <div className="bar" />;`);
+  });
+
+  it("does NOT touch spread attributes", async () => {
+    const result = await runTransform(
+      `const x = <div {...props} data-testid="foo" className="bar" />;`,
+    );
+    expect(result?.code).toBe(`const x = <div {...props} className="bar" />;`);
+  });
+
+  it("does NOT touch namespaced attributes (e.g. xlink:href)", async () => {
+    const result = await runTransform(
+      `const x = <svg xlink:href="#a" data-testid="foo"><use /></svg>;`,
+    );
+    expect(result?.code).toBe(`const x = <svg xlink:href="#a"><use /></svg>;`);
+  });
+
+  it("strips target as the last attribute", async () => {
+    const result = await runTransform(`const x = <div className="bar" data-testid="foo" />;`);
+    expect(result?.code).toBe(`const x = <div className="bar" />;`);
+  });
+
+  it("strips target as the only attribute", async () => {
+    const result = await runTransform(`const x = <div data-testid="foo" />;`);
+    expect(result?.code).toBe(`const x = <div />;`);
+  });
+
+  it("does NOT touch attribute appearing inside a template literal", async () => {
+    const result = await runTransform(
+      'const html = `<div data-testid="x"></div>`;\nconst el = <div className="y" />;',
+    );
+    // Template literal content is preserved; no JSXAttribute matched anywhere.
+    expect(result).toBeNull();
+  });
+
+  it("strips inside JSX inside expression containers", async () => {
+    const result = await runTransform(
+      `const x = <ul>{items.map((i) => <li data-testid={i.id} key={i.id}>{i.name}</li>)}</ul>;`,
+    );
+    expect(result?.code).toBe(
+      `const x = <ul>{items.map((i) => <li key={i.id}>{i.name}</li>)}</ul>;`,
+    );
+  });
+
+  it("handles TypeScript generic syntax in same file", async () => {
+    const code = `const id = <T,>(x: T): T => x;\nconst el = <div data-testid="foo" />;`;
+    const result = await runTransform(code);
+    expect(result?.code).toBe(`const id = <T,>(x: T): T => x;\nconst el = <div />;`);
+  });
+});
+
+describe("sourcemap correctness", () => {
+  it("maps a position after the stripped attribute back to the original line", async () => {
+    const { decode } = await import("@jridgewell/sourcemap-codec");
+
+    // Three-line input with the target on line 2.
+    const code =
+      `const Header = () => (\n` +
+      `  <div data-testid="header" className="row">\n` +
+      `    <span>Hello</span>\n` +
+      `  </div>\n` +
+      `);\n`;
+    const result = await runTransform(code);
+    expect(result).not.toBeNull();
+    const map = result?.map as { mappings: string };
+
+    // Decoded format: outputLine -> [outputCol, sourceIdx, sourceLine, sourceCol][]
+    const decoded = decode(map.mappings);
+
+    // Output line 2 starts with `  <div ` (testid removed). The `<` is at
+    // output column 2. It should map back to original line 2, column 2.
+    const outputLine2 = decoded[1] ?? [];
+    const segmentAtLeftBracket = outputLine2.find((seg) => seg[0] === 2);
+    expect(segmentAtLeftBracket).toBeDefined();
+    expect(segmentAtLeftBracket?.[2]).toBe(1); // source line (0-indexed) = line 2
+    expect(segmentAtLeftBracket?.[3]).toBe(2); // source column
+
+    // Output line 3 (`    <span>`) should map back to original line 3 unchanged.
+    const outputLine3 = decoded[2] ?? [];
+    expect(outputLine3.length).toBeGreaterThan(0);
+    const firstSeg3 = outputLine3[0]!;
+    expect(firstSeg3[2]).toBe(2); // source line (0-indexed) = line 3
+
+    // sources should include our virtual filename.
+    expect((map as { sources?: string[] }).sources).toContain("test.tsx");
+  });
+
+  it("emits hires (per-character) mappings", async () => {
+    const { decode } = await import("@jridgewell/sourcemap-codec");
+    const result = await runTransform(`const x = <div data-testid="foo" className="bar" />;`);
+    expect(result).not.toBeNull();
+    const decoded = decode((result!.map as { mappings: string }).mappings);
+    // hires gives a segment per character on the affected line; we expect
+    // many segments, not just a handful.
+    const lineSegs = decoded[0] ?? [];
+    expect(lineSegs.length).toBeGreaterThan(10);
+  });
+});
+
+// ---------- fuzz generators ----------
+
+const identifier = fc
+  .stringMatching(/^[a-z][a-z0-9]{0,5}$/)
+  .filter((s) => !["true", "false", "null", "for", "if"].includes(s));
+
+const stringAttr = fc
+  .tuple(identifier, fc.stringMatching(/^[a-zA-Z0-9 _-]{0,12}$/))
+  .map(([k, v]) => `${k}="${v}"`);
+
+const targetAttr = fc.stringMatching(/^[a-zA-Z0-9 _-]{0,12}$/).map((v) => `data-testid="${v}"`);
+
+const jsxFragment = fc
+  .tuple(identifier, fc.array(fc.oneof(stringAttr, targetAttr), { minLength: 0, maxLength: 5 }))
+  .map(([tag, attrs]) => {
+    const attrStr = attrs.length ? " " + attrs.join(" ") : "";
+    return `const x = <${tag}${attrStr} />;`;
+  });
+
+const jsxFragmentWithoutTarget = fc
+  .tuple(identifier, fc.array(stringAttr, { minLength: 0, maxLength: 5 }))
+  .map(([tag, attrs]) => {
+    const attrStr = attrs.length ? " " + attrs.join(" ") : "";
+    return `const x = <${tag}${attrStr} />;`;
+  });
+
+const fuzzTransform = (code: string) => {
+  const plugin = removeAttributes() as {
+    transform: (code: string, id: string) => { code: string } | null;
+  };
+  return plugin.transform(code, "fuzz.tsx");
+};
+
+describe("fuzz / property tests", () => {
+  fcTest.prop([jsxFragment], { numRuns: 200 })(
+    "is idempotent (running twice equals running once)",
+    (code) => {
+      const once = fuzzTransform(code);
+      if (!once) return;
+      const twice = fuzzTransform(once.code);
+      expect(twice).toBeNull();
+    },
+  );
+
+  fcTest.prop([jsxFragmentWithoutTarget], { numRuns: 200 })(
+    "returns null for code with no target attribute",
+    (code) => {
+      expect(fuzzTransform(code)).toBeNull();
+    },
+  );
+
+  fcTest.prop([jsxFragment], { numRuns: 200 })("never increases output length", (code) => {
+    const result = fuzzTransform(code);
+    if (!result) return;
+    expect(result.code.length).toBeLessThan(code.length);
   });
 });
