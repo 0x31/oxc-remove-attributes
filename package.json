@@ -1,0 +1,78 @@
+{
+  "name": "oxc-remove-attributes",
+  "version": "0.1.0",
+  "description": "Vite/Rolldown plugin that strips JSX attributes (e.g. data-testid) from production builds using oxc + magic-string. Drop-in replacement for @swc/plugin-react-remove-properties on Vite 8 / @vitejs/plugin-react (oxc).",
+  "keywords": [
+    "data-testid",
+    "jsx",
+    "oxc",
+    "production",
+    "react",
+    "remove-attributes",
+    "rolldown",
+    "rolldown-plugin",
+    "strip-attributes",
+    "vite",
+    "vite-plugin"
+  ],
+  "homepage": "https://github.com/0x31/oxc-remove-attributes#readme",
+  "bugs": {
+    "url": "https://github.com/0x31/oxc-remove-attributes/issues"
+  },
+  "license": "ISC",
+  "author": "0x31",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/0x31/oxc-remove-attributes.git"
+  },
+  "files": [
+    "dist",
+    "package.json",
+    "README.md"
+  ],
+  "type": "module",
+  "main": "dist/src/index.js",
+  "types": "dist/src/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/src/index.d.ts",
+      "import": "./dist/src/index.js"
+    }
+  },
+  "scripts": {
+    "test": "vitest",
+    "test:run": "vitest run",
+    "build": "rimraf ./dist && tsgo --project tsconfig.build.json",
+    "lint": "oxlint",
+    "lint:fix": "npm run lint -- --fix",
+    "format": "oxfmt",
+    "format:check": "oxfmt --check",
+    "typecheck": "tsgo",
+    "prepublishOnly": "npm run build && npm run test:run"
+  },
+  "dependencies": {
+    "magic-string": "^0.30.21",
+    "oxc-parser": "^0.129.0"
+  },
+  "devDependencies": {
+    "@types/node": "^24.10.11",
+    "@typescript/native-preview": "^7.0.0-dev.20260204.1",
+    "oxfmt": "^0.28.0",
+    "oxlint": "^1.43.0",
+    "rimraf": "^6.0.1",
+    "typescript": "^5.8.2",
+    "vite": "^8.0.11",
+    "vitest": "^4.1.5"
+  },
+  "peerDependencies": {
+    "vite": ">=5"
+  },
+  "peerDependenciesMeta": {
+    "vite": {
+      "optional": true
+    }
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
