@@ -9,7 +9,7 @@
     "@types/node": "^24",
     "@types/react": "^19",
     "@vitejs/plugin-react": "^6.0.1",
-    "oxc-remove-attributes": "file:..",
+    "oxc-remove-attributes": "workspace:^",
     "react": "^19",
     "react-dom": "^19",
     "typescript": "^5.8",
