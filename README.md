@@ -1,42 +1,42 @@
 # oxc-remove-attributes
 
-Strip JSX attributes (e.g. `data-testid`) from your production bundle using **oxc** + **magic-string**.
+[![License](https://img.shields.io/github/license/0x31/oxc-remove-attributes?style=for-the-badge&labelColor=2e3440&color=6f4fbe)](https://github.com/0x31/oxc-remove-attributes/blob/main/LICENSE)
+[![Version](https://img.shields.io/npm/v/oxc-remove-attributes.svg?label=Version&style=for-the-badge&labelColor=2e3440&color=eea837)](https://www.npmjs.com/package/oxc-remove-attributes)
+[![Downloads](https://img.shields.io/npm/dw/oxc-remove-attributes?style=for-the-badge&labelColor=2e3440&color=50b6a9)](https://www.npmjs.com/package/oxc-remove-attributes)
+[![Vite Badge](https://img.shields.io/badge/Vite-646CFF?logo=vite&logoColor=fff&style=for-the-badge)](https://vite.dev)
+[![TypeScript Badge](https://img.shields.io/badge/TypeScript-3178C6?logo=typescript&logoColor=fff&style=for-the-badge)](https://www.typescriptlang.org)
 
-Built for Vite 8 / `@vitejs/plugin-react` (oxc) where the old `@swc/plugin-react-remove-properties` story no longer applies. Works on any Vite ≥5, and on Rolldown directly.
+A Vite/Rolldown plugin that removes JSX attributes (e.g. `data-testid`) from production builds. Parses with [oxc](https://oxc.rs) and emits accurate sourcemaps via [magic-string](https://github.com/Rich-Harris/magic-string).
 
-## Why
-
-If you removed `@vitejs/plugin-react-swc` in favour of the new oxc-based `@vitejs/plugin-react`, you lost access to `@swc/plugin-react-remove-properties` — there is no oxc equivalent. This plugin fills that gap without dragging Babel or SWC back into your build:
-
-- ⚡ **Native parser** — oxc (Rust/NAPI), same family as Vite 8 internals
-- 🗺️ **Real sourcemaps** — surgical removals via `magic-string`, so Sentry stack-trace columns stay accurate
-- 🧠 **AST-based** — no regex edge cases, handles arbitrarily nested expressions
-- 🪶 **Tiny** — single transform hook, ~120 lines, no Babel, no SWC
-- 🔁 **Runtime-agnostic** — operates on raw JSX, works with classic _and_ automatic JSX runtimes
+Intended as a replacement for `@swc/plugin-react-remove-properties` after the move from `@vitejs/plugin-react-swc` to the oxc-based `@vitejs/plugin-react` in Vite 8, where no oxc equivalent of that SWC plugin exists.
 
 ## Install
 
-```sh
-npm install -D oxc-remove-attributes
+```bash
+yarn add -D oxc-remove-attributes
+```
+
+or
+
+```bash
+npm i --save-dev oxc-remove-attributes
 ```
 
 ## Usage
 
+In `vite.config.ts` or `vite.config.js`:
+
 ```ts
-// vite.config.ts
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import { removeAttributes } from "oxc-remove-attributes";
 
 export default defineConfig({
-  plugins: [
-    react(),
-    removeAttributes(), // strips data-testid by default, only on `vite build`
-  ],
+  plugins: [react(), removeAttributes()],
 });
 ```
 
-By default the plugin only runs during `vite build`, so test IDs stay live during `vite dev` and (importantly) for `vite build --mode test` builds used by e2e suites.
+By default the plugin only runs during `vite build`, so `data-testid` attributes remain in dev and in `vite build --mode test` builds used by e2e suites.
 
 ## Options
 
@@ -70,16 +70,6 @@ removeAttributes({
 removeAttributes({ apply: "both" });
 ```
 
-## How it compares
-
-| Plugin                                | Parser                      | Sourcemap               | JSX-runtime coupled  | Babel/SWC dep              |
-| ------------------------------------- | --------------------------- | ----------------------- | -------------------- | -------------------------- |
-| `oxc-remove-attributes` (this)        | oxc                         | High-res (magic-string) | No                   | No                         |
-| `@swc/plugin-react-remove-properties` | SWC                         | n/a (in-process)        | No                   | SWC                        |
-| `rollup-plugin-jsx-remove-attributes` | Vite's `this.parse` (acorn) | Lower (astring regen)   | Yes (`_jsx`/`_jsxs`) | No                         |
-| `vite-plugin-react-remove-attributes` | Inlined astring             | —                       | —                    | No (peerDep `vite ^2.4.4`) |
-| `remove-attr`                         | Regex                       | None                    | No                   | No                         |
-
 ## License
 
-ISC © 0x31
+ISC
