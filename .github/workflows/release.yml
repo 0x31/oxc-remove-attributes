@@ -21,9 +21,11 @@ jobs:
         run: corepack enable
       - run: yarn install --immutable
       - run: yarn lint
+      - run: yarn format:check
       - run: yarn typecheck
       - run: yarn test:run
       - run: yarn build
+      - run: yarn test:integration
       # Auth + signing both come from the GitHub Actions OIDC identity.
       # Requires Trusted Publishing to be configured for this package on npmjs.com.
       - run: npm publish --provenance --access public

@@ -1,6 +1,6 @@
 {
   "name": "oxc-remove-attributes",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Vite/Rolldown plugin that strips JSX attributes (e.g. data-testid) from production builds using oxc + magic-string. Drop-in replacement for @swc/plugin-react-remove-properties on Vite 8 / @vitejs/plugin-react (oxc).",
   "keywords": [
     "data-testid",
@@ -49,7 +49,7 @@
     "format": "oxfmt",
     "format:check": "oxfmt --check",
     "typecheck": "tsgo",
-    "prepublishOnly": "yarn build && yarn test:run"
+    "prepublishOnly": "yarn lint && yarn format:check && yarn typecheck && yarn test:run && yarn build && yarn test:integration"
   },
   "dependencies": {
     "magic-string": "^0.30.21",

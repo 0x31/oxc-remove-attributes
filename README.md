@@ -71,6 +71,39 @@ removeAttributes({
 removeAttributes({ apply: "both" });
 ```
 
+## Limitations
+
+The plugin operates on JSX attributes statically. It will **not** strip targets that arrive at runtime via a spread, e.g.:
+
+```tsx
+const props = { "data-testid": "x" };
+<div {...props} />;
+```
+
+If you rely on the bundle being completely free of test IDs, either avoid spreading them or pair this plugin with an `oxlint` / `eslint` rule that forbids `data-testid` in the value side of a spread source.
+
+Namespaced attributes (`xlink:href`, `xml:lang`, etc.) and component-prop attributes whose names don't match exactly are also untouched by design.
+
+### Prop-chain pass-through
+
+The plugin matches attribute names **exactly**. A component that accepts a camelCase prop and forwards it to a DOM `data-testid` looks like this:
+
+```tsx
+// Consumer
+<Modal dataTestId="checkout-modal" />;
+
+// Inside Modal.tsx
+<div data-testid={dataTestId}>{children}</div>;
+```
+
+With the default `attributes: ['data-testid']`, the DOM `data-testid={dataTestId}` is stripped (production DOM is clean), but the `dataTestId` prop is not — `"checkout-modal"` survives in the bundle as a JSX prop value even though it's never written to the DOM.
+
+If you want to strip prop pass-through too, include both names:
+
+```ts
+removeAttributes({ attributes: ["data-testid", "dataTestId"] });
+```
+
 ## License
 
 ISC

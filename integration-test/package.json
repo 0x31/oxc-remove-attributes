@@ -3,7 +3,9 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "vite build && node verify.js"
+    "test": "npm run test:strip && npm run test:mode-test",
+    "test:strip": "vite build && node verify.js strip",
+    "test:mode-test": "vite build --mode test --outDir dist-mode-test && node verify.js mode-test"
   },
   "dependencies": {
     "@types/node": "^24",

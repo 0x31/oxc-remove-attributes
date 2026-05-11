@@ -323,3 +323,44 @@ describe("fuzz / property tests", () => {
     expect(result.code.length).toBeLessThan(code.length);
   });
 });
+
+describe("regression: v0.1.1 fixes", () => {
+  it("attributes: [] is a no-op — does not strip anything and bails fast", async () => {
+    // With an empty attributes list, `new RegExp("")` matches every string
+    // and parser would be invoked unnecessarily. The plugin should
+    // short-circuit instead.
+    const result = await runTransform(
+      `const x = <div data-testid="foo" className="bar" />;`,
+      "test.tsx",
+      { attributes: [] },
+    );
+    expect(result).toBeNull();
+  });
+
+  it("sourcemap source field is de-queried (no ?query suffix)", async () => {
+    const result = await runTransform(`const x = <div data-testid="foo" />;`, "Foo.tsx?used");
+    expect(result).not.toBeNull();
+    const map = result?.map as { sources?: string[] };
+    expect(map.sources).toBeDefined();
+    // Sentry / devtools see this — should be the de-queried filename.
+    expect(map.sources?.[0]).toBe("Foo.tsx");
+  });
+
+  it("handles nested JSX with target attributes on outer and inner elements", async () => {
+    // Outer JSXAttribute's value is a JSXElement that itself has a
+    // matching attribute. Walker should not throw on overlapping/nested
+    // removes.
+    const code = `const x = <Outer data-testid="o" wrapper={<Inner data-testid="i" />} />;`;
+    const result = await runTransform(code);
+    expect(result?.code).toBe(`const x = <Outer wrapper={<Inner />} />;`);
+  });
+
+  it("handles target attribute whose value contains nested JSX with target", async () => {
+    // Outer data-testid={...} contains an inner element that also has
+    // data-testid. The inner one falls inside an already-removed range —
+    // walker should skip descending into a removed attribute.
+    const code = `const x = <div data-testid={<Foo data-testid="x" />}>hi</div>;`;
+    const result = await runTransform(code);
+    expect(result?.code).toBe(`const x = <div>hi</div>;`);
+  });
+});

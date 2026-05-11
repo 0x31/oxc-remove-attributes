@@ -2,6 +2,7 @@ node_modules
 dist
 coverage
 integration-test/dist
+integration-test/dist-*
 integration-test/yarn.lock
 *.tsbuildinfo
 .DS_Store

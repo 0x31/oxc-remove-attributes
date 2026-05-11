@@ -1,52 +1,69 @@
 import { readFile } from "node:fs/promises";
 
-const built = await readFile("./dist/out.js", "utf-8");
-const map = JSON.parse(await readFile("./dist/out.js.map", "utf-8"));
+const scenario = process.argv[2];
+if (scenario !== "strip" && scenario !== "mode-test") {
+  console.error(`usage: verify.js <strip|mode-test>`);
+  process.exit(2);
+}
 
-console.log(`Built output: ${built.split("\n").length} lines, ${built.length} bytes`);
+const distDir = scenario === "mode-test" ? "./dist-mode-test" : "./dist";
+const built = await readFile(`${distDir}/out.js`, "utf-8");
+const map = JSON.parse(await readFile(`${distDir}/out.js.map`, "utf-8"));
+
+console.log(`[${scenario}] built output: ${built.split("\n").length} lines, ${built.length} bytes`);
 
 const failures = [];
-
-// 1. Confirm none of our target attributes survived to the bundle as JSX-like
-//    output. We grep the literal strings that React's JSX runtime emits — the
-//    attribute name appears as a quoted string in the `_jsx("tag", { ... })`
-//    call when it survives stripping.
 const forbidden = ['"data-testid"', "'data-testid'", '"data-cy"', "'data-cy'"];
-for (const needle of forbidden) {
-  if (built.includes(needle)) {
-    failures.push(`bundle still contains ${needle}`);
+
+if (scenario === "strip") {
+  // Default `vite build`: target attributes must NOT survive in the bundle.
+  for (const needle of forbidden) {
+    if (built.includes(needle)) failures.push(`bundle still contains ${needle}`);
+  }
+
+  // Strings inside text content / templates should be preserved.
+  if (!built.includes('data-testid=\\"not-jsx\\"') && !built.includes('data-testid="not-jsx"')) {
+    failures.push("over-stripped: literal string content was removed");
+  }
+
+  // Spread + namespaced attributes should still be present.
+  if (!built.match(/xlink:href|"xlink:href"/)) {
+    failures.push("xlink:href namespaced attr was stripped (should be untouched)");
+  }
+
+  // Sourcemap should exist and have non-empty mappings.
+  if (!map.mappings || map.mappings.length < 10) {
+    failures.push(`sourcemap mappings look empty: ${JSON.stringify(map.mappings).slice(0, 60)}`);
+  }
+  if (!Array.isArray(map.sources) || map.sources.length === 0) {
+    failures.push("sourcemap has no sources");
+  }
+
+  // Sourcemap sources must be de-queried (no ?used / ?commonjs-proxy etc).
+  for (const src of map.sources ?? []) {
+    if (typeof src === "string" && src.includes("?")) {
+      failures.push(`sourcemap source contains query string: ${src}`);
+    }
+  }
+} else {
+  // `vite build --mode test`: e2e bundles must KEEP target attributes
+  // because Playwright/Cypress locate elements by them. This is the
+  // contract the plugin's default `apply` honours.
+  let kept = 0;
+  for (const needle of forbidden) {
+    if (built.includes(needle)) kept++;
+  }
+  if (kept === 0) {
+    failures.push(
+      "mode=test build stripped target attributes — the default apply() should skip mode=test so e2e selectors keep working",
+    );
   }
 }
 
-// 2. Strings inside text content / templates should be preserved (proves we
-//    didn't over-strip). The literal `data-testid="not-jsx"` was inside a
-//    <title> text node — it should still appear in the output as a JS
-//    string literal (with JSON-escaped quotes).
-if (!built.includes('data-testid=\\"not-jsx\\"') && !built.includes('data-testid="not-jsx"')) {
-  failures.push("over-stripped: literal string content was removed");
-}
-
-// 3. Spread + namespaced attributes should still be present. xlink:href
-//    survives the React transform as the property name on the props object.
-if (!built.match(/xlink:href|"xlink:href"/)) {
-  failures.push("xlink:href namespaced attr was stripped (should be untouched)");
-}
-
-// 4. Sourcemap should exist and have non-empty mappings.
-if (!map.mappings || map.mappings.length < 10) {
-  failures.push(`sourcemap mappings look empty: ${JSON.stringify(map.mappings).slice(0, 60)}`);
-}
-if (!Array.isArray(map.sources) || map.sources.length === 0) {
-  failures.push("sourcemap has no sources");
-}
-
 if (failures.length > 0) {
-  console.error("\nIntegration test FAILED:");
+  console.error(`\n[${scenario}] integration test FAILED:`);
   for (const f of failures) console.error("  - " + f);
   process.exit(1);
 }
 
-console.log("\nIntegration test passed ✓");
-console.log("  - no target attributes leaked into bundle");
-console.log("  - non-target content preserved (strings, namespaced attrs, spreads)");
-console.log("  - sourcemap emitted with mappings");
+console.log(`[${scenario}] integration test passed ✓`);

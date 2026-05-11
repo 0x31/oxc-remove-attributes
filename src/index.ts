@@ -81,9 +81,12 @@ export const removeAttributes = (options: RemoveAttributesOptions = {}): Plugin 
   };
 
   // Cheap pre-filter: skip files that mention none of our targets at all.
-  const fastBailRegex = new RegExp(
-    [...attributes].map((a) => a.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|"),
-  );
+  // `new RegExp("")` matches everything, so when the attribute set is empty
+  // we keep `fastBailRegex` null and short-circuit `transform` immediately.
+  const fastBailRegex =
+    attributes.size === 0
+      ? null
+      : new RegExp([...attributes].map((a) => a.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|"));
 
   // Translate string shorthands into the (config, env) => boolean form Vite
   // expects. Critically, the default `'build'` excludes `--mode test` so
@@ -103,11 +106,14 @@ export const removeAttributes = (options: RemoveAttributesOptions = {}): Plugin 
     enforce,
     apply: resolveApply(),
     transform(code: string, id: string) {
+      if (fastBailRegex === null) return null;
       if (!shouldProcess(id)) return null;
       if (!fastBailRegex.test(code)) return null;
 
       // Strip any `?query` from the filename so oxc reads the extension
-      // correctly (Vite emits ids like `Foo.tsx?used`).
+      // correctly (Vite emits ids like `Foo.tsx?used`). The de-queried
+      // filename is also used as the sourcemap `source` so downstream
+      // tools (Sentry, devtools) see `Foo.tsx` rather than `Foo.tsx?used`.
       const filename = id.split("?")[0]!;
       const { program, errors } = parseSync(filename, code, {
         sourceType: "module",
@@ -132,7 +138,11 @@ export const removeAttributes = (options: RemoveAttributesOptions = {}): Plugin 
       });
 
       if (!removed) return null;
-      return { code: s.toString(), map: s.generateMap({ hires: true, source: id }) };
+      // `source` is the de-queried path so Sentry/devtools see `Foo.tsx`
+      // rather than `Foo.tsx?used`. We deliberately don't set `file` — in
+      // magic-string's API that's the path of the *generated* file, not
+      // the source, and we're an intermediate transform without one.
+      return { code: s.toString(), map: s.generateMap({ hires: true, source: filename }) };
     },
   };
 };
