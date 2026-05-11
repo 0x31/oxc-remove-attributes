@@ -27,3 +27,7 @@ jobs:
       # Auth + signing both come from the GitHub Actions OIDC identity.
       # Requires Trusted Publishing to be configured for this package on npmjs.com.
       - run: npm publish --provenance --access public
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh release create "$GITHUB_REF_NAME" --generate-notes --verify-tag
