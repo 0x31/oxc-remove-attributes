@@ -4,6 +4,7 @@
 [![Version](https://img.shields.io/npm/v/oxc-remove-attributes.svg?label=Version&style=for-the-badge&labelColor=2e3440&color=eea837)](https://www.npmjs.com/package/oxc-remove-attributes)
 [![Downloads](https://img.shields.io/npm/dw/oxc-remove-attributes?style=for-the-badge&labelColor=2e3440&color=50b6a9)](https://www.npmjs.com/package/oxc-remove-attributes)
 [![Vite Badge](https://img.shields.io/badge/Vite-646CFF?logo=vite&logoColor=fff&style=for-the-badge)](https://vite.dev)
+[![oxc Badge](https://img.shields.io/badge/oxc-F73D45?style=for-the-badge&labelColor=2e3440)](https://oxc.rs)
 [![TypeScript Badge](https://img.shields.io/badge/TypeScript-3178C6?logo=typescript&logoColor=fff&style=for-the-badge)](https://www.typescriptlang.org)
 
 A Vite/Rolldown plugin that removes JSX attributes (e.g. `data-testid`) from production builds. Parses with [oxc](https://oxc.rs) and emits accurate sourcemaps via [magic-string](https://github.com/Rich-Harris/magic-string).
