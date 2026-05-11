@@ -25,9 +25,6 @@
     "type": "git",
     "url": "git+https://github.com/0x31/oxc-remove-attributes.git"
   },
-  "workspaces": [
-    "integration-test"
-  ],
   "files": [
     "dist",
     "package.json",
@@ -45,7 +42,7 @@
   "scripts": {
     "test": "vitest",
     "test:run": "vitest run",
-    "test:integration": "yarn build && yarn workspace integration-test test",
+    "test:integration": "yarn build && cd integration-test && touch yarn.lock && yarn install --no-immutable && yarn test",
     "build": "rimraf ./dist && tsgo --project tsconfig.build.json",
     "lint": "oxlint --ignore-pattern integration-test",
     "lint:fix": "yarn lint --fix",

@@ -1,5 +1,6 @@
 import MagicString from "magic-string";
 import { parseSync } from "oxc-parser";
+import type { Plugin } from "vite";
 
 export interface RemoveAttributesOptions {
   /**
@@ -29,13 +30,21 @@ export interface RemoveAttributesOptions {
   enforce?: "pre" | "post";
 
   /**
-   * Build mode(s) where the plugin is active.
-   *  - `'build'`: only `vite build` (default — testids stay live in dev).
-   *  - `'serve'`: only `vite dev`.
-   *  - `'both'`: always active.
+   * When the plugin is active.
+   *  - `'build'` (default): runs during `vite build` *except* when
+   *    `--mode test` is used, so e2e/test bundles keep their testids.
+   *  - `'serve'`: runs only during `vite dev`.
+   *  - `'both'`: always active (dev + build, regardless of mode).
+   *  - function: full control — receives Vite's `(config, env)` and
+   *    returns whether to include the plugin.
    * @default 'build'
    */
-  apply?: "build" | "serve" | "both";
+  apply?: "build" | "serve" | "both" | ((config: unknown, env: ApplyEnv) => boolean);
+}
+
+export interface ApplyEnv {
+  command: "build" | "serve";
+  mode: string;
 }
 
 const DEFAULT_ATTRIBUTES = ["data-testid"];
@@ -60,11 +69,11 @@ const DEFAULT_EXTENSIONS = [".tsx", ".jsx"];
  * });
  * ```
  */
-export const removeAttributes = (options: RemoveAttributesOptions = {}) => {
+export const removeAttributes = (options: RemoveAttributesOptions = {}): Plugin => {
   const attributes = new Set(options.attributes ?? DEFAULT_ATTRIBUTES);
   const extensions = options.extensions ?? DEFAULT_EXTENSIONS;
   const enforce = options.enforce ?? "pre";
-  const apply = options.apply ?? "build";
+  const applyOption = options.apply ?? "build";
 
   const shouldProcess = (id: string) => {
     const path = id.split("?")[0]!;
@@ -76,10 +85,23 @@ export const removeAttributes = (options: RemoveAttributesOptions = {}) => {
     [...attributes].map((a) => a.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|"),
   );
 
+  // Translate string shorthands into the (config, env) => boolean form Vite
+  // expects. Critically, the default `'build'` excludes `--mode test` so
+  // that e2e bundles built with `vite build --mode test` keep their
+  // testids intact — Vite's plain `apply: 'build'` would not.
+  const resolveApply = (): Plugin["apply"] => {
+    if (typeof applyOption === "function") {
+      return applyOption as Plugin["apply"];
+    }
+    if (applyOption === "both") return undefined;
+    if (applyOption === "serve") return "serve";
+    return (_config, env) => env.command === "build" && env.mode !== "test";
+  };
+
   return {
     name: "oxc-remove-attributes",
     enforce,
-    apply: apply === "both" ? undefined : apply,
+    apply: resolveApply(),
     transform(code: string, id: string) {
       if (!shouldProcess(id)) return null;
       if (!fastBailRegex.test(code)) return null;

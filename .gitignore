@@ -2,6 +2,7 @@ node_modules
 dist
 coverage
 integration-test/dist
+integration-test/yarn.lock
 *.tsbuildinfo
 .DS_Store
 .idea
@@ -9,10 +10,11 @@ integration-test/dist
 *.log
 
 # Yarn 4 (Zero-Installs disabled; keep yarn.lock, ignore caches)
-.yarn/*
-!.yarn/patches
-!.yarn/plugins
-!.yarn/releases
-!.yarn/sdks
-!.yarn/versions
+# `**/` ensures it matches the integration-test workspace too.
+**/.yarn/*
+!**/.yarn/patches
+!**/.yarn/plugins
+!**/.yarn/releases
+!**/.yarn/sdks
+!**/.yarn/versions
 .pnp.*

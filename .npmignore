@@ -1,8 +1,0 @@
-node_modules
-test
-coverage
-src
-tsconfig*.json
-.github
-.gitignore
-*.tsbuildinfo

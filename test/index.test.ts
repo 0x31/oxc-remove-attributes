@@ -129,15 +129,31 @@ describe("removeAttributes", () => {
   });
 });
 
+type ApplyFn = (config: unknown, env: { command: string; mode: string }) => boolean;
+
 describe("plugin metadata", () => {
   it("exposes the expected name and defaults", () => {
-    const plugin = removeAttributes() as { name: string; enforce: string; apply: unknown };
+    const plugin = removeAttributes() as { name: string; enforce: string };
     expect(plugin.name).toBe("oxc-remove-attributes");
     expect(plugin.enforce).toBe("pre");
-    expect(plugin.apply).toBe("build");
   });
 
-  it("respects apply: both", () => {
+  it("default apply: skipped during vite build --mode test (so e2e bundles keep testids)", () => {
+    const plugin = removeAttributes() as { apply: ApplyFn };
+    expect(typeof plugin.apply).toBe("function");
+    expect(plugin.apply({}, { command: "build", mode: "test" })).toBe(false);
+    expect(plugin.apply({}, { command: "build", mode: "production" })).toBe(true);
+    expect(plugin.apply({}, { command: "build", mode: "development" })).toBe(true);
+    expect(plugin.apply({}, { command: "serve", mode: "development" })).toBe(false);
+  });
+
+  it("respects apply: serve", () => {
+    // 'serve' has no mode-test edge case; we pass the string through unchanged.
+    const plugin = removeAttributes({ apply: "serve" }) as { apply: unknown };
+    expect(plugin.apply).toBe("serve");
+  });
+
+  it("respects apply: both (always active)", () => {
     const plugin = removeAttributes({ apply: "both" }) as { apply: unknown };
     expect(plugin.apply).toBeUndefined();
   });
