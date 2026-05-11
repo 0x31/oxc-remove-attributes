@@ -535,13 +535,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@rolldown/pluginutils@npm:1.0.0-rc.7":
-  version: 1.0.0-rc.7
-  resolution: "@rolldown/pluginutils@npm:1.0.0-rc.7"
-  checksum: 10c0/9d5490b5805b25bcd1720ca01c4c032b55a0ef953dab36a8dd42c568e82214576baa464f3027cd5dff3fabcfbe3bf3db2251d12b60220f5d1cd2ffde5ee37082
-  languageName: node
-  linkType: hard
-
 "@standard-schema/spec@npm:^1.1.0":
   version: 1.1.0
   resolution: "@standard-schema/spec@npm:1.1.0"
@@ -582,21 +575,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/node@npm:^24, @types/node@npm:^24.10.11":
+"@types/node@npm:^24.10.11":
   version: 24.12.3
   resolution: "@types/node@npm:24.12.3"
   dependencies:
     undici-types: "npm:~7.16.0"
   checksum: 10c0/e9db4194a0043c07e8c84c9e3ad19e4a216c708818de75ecfca858edb30d4f9f7ef1cb854959af552896eaf69ff79ea3d6e63157a6d37b0e1b809fac1c538e55
-  languageName: node
-  linkType: hard
-
-"@types/react@npm:^19":
-  version: 19.2.14
-  resolution: "@types/react@npm:19.2.14"
-  dependencies:
-    csstype: "npm:^3.2.2"
-  checksum: 10c0/7d25bf41b57719452d86d2ac0570b659210402707313a36ee612666bf11275a1c69824f8c3ee1fdca077ccfe15452f6da8f1224529b917050eb2d861e52b59b7
   languageName: node
   linkType: hard
 
@@ -678,24 +662,6 @@ __metadata:
   bin:
     tsgo: bin/tsgo.js
   checksum: 10c0/5cf8a56fa75403ad6c400e1279499ba47ff99e74deb5ca79eeac2bbe94fcacd3141226d80eabe2313192ca9e1c2417c1d94f5ca5055598cffa503c3885cedf3c
-  languageName: node
-  linkType: hard
-
-"@vitejs/plugin-react@npm:^6.0.1":
-  version: 6.0.1
-  resolution: "@vitejs/plugin-react@npm:6.0.1"
-  dependencies:
-    "@rolldown/pluginutils": "npm:1.0.0-rc.7"
-  peerDependencies:
-    "@rolldown/plugin-babel": ^0.1.7 || ^0.2.0
-    babel-plugin-react-compiler: ^1.0.0
-    vite: ^8.0.0
-  peerDependenciesMeta:
-    "@rolldown/plugin-babel":
-      optional: true
-    babel-plugin-react-compiler:
-      optional: true
-  checksum: 10c0/6c42f53a970cb6b0776ba5b4203bb01690ac564c56fca706d4037b50aec965ddc0f11530ab58ab2cd0fbe8c12e14cff6966b22d90391283b4a53294e3ddd478d
   languageName: node
   linkType: hard
 
@@ -832,13 +798,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"csstype@npm:^3.2.2":
-  version: 3.2.3
-  resolution: "csstype@npm:3.2.3"
-  checksum: 10c0/cd29c51e70fa822f1cecd8641a1445bed7063697469d35633b516e60fe8c1bde04b08f6c5b6022136bb669b64c63d4173af54864510fbb4ee23281801841a3ce
-  languageName: node
-  linkType: hard
-
 "detect-libc@npm:^2.0.3":
   version: 2.1.2
   resolution: "detect-libc@npm:2.1.2"
@@ -940,21 +899,6 @@ __metadata:
   checksum: 10c0/386d011a553e02bc594ac2ca0bd6d9e4c22d7fa8cfbfc448a6d148c59ea881b092db9dbe3547ae4b88e55f1b01f7c4a2ecc53b310c042793e63aa44cf6c257f2
   languageName: node
   linkType: hard
-
-"integration-test@workspace:integration-test":
-  version: 0.0.0-use.local
-  resolution: "integration-test@workspace:integration-test"
-  dependencies:
-    "@types/node": "npm:^24"
-    "@types/react": "npm:^19"
-    "@vitejs/plugin-react": "npm:^6.0.1"
-    oxc-remove-attributes: "workspace:^"
-    react: "npm:^19"
-    react-dom: "npm:^19"
-    typescript: "npm:^5.8"
-    vite: "npm:^8.0.0"
-  languageName: unknown
-  linkType: soft
 
 "isexe@npm:^4.0.0":
   version: 4.0.0
@@ -1241,7 +1185,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"oxc-remove-attributes@workspace:., oxc-remove-attributes@workspace:^":
+"oxc-remove-attributes@workspace:.":
   version: 0.0.0-use.local
   resolution: "oxc-remove-attributes@workspace:."
   dependencies:
@@ -1437,24 +1381,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"react-dom@npm:^19":
-  version: 19.2.6
-  resolution: "react-dom@npm:19.2.6"
-  dependencies:
-    scheduler: "npm:^0.27.0"
-  peerDependencies:
-    react: ^19.2.6
-  checksum: 10c0/dbf2aef67857c03a612bc9316a4562e5066f43fa04bf28f7f0734963fc1350da2c9f8eb973930655453281079f30cc8222bab383dbec4b5097084e2c081e3334
-  languageName: node
-  linkType: hard
-
-"react@npm:^19":
-  version: 19.2.6
-  resolution: "react@npm:19.2.6"
-  checksum: 10c0/66afde33b9a9ee87b1e1cae39d8e7e040d1262e719524fd70660c4d4ce79929c532ac19fc3df5a911edaf02768fdf2c49de4ede1ba99bc6aad72796e0e26e798
-  languageName: node
-  linkType: hard
-
 "rimraf@npm:^6.0.1":
   version: 6.1.3
   resolution: "rimraf@npm:6.1.3"
@@ -1522,13 +1448,6 @@ __metadata:
   bin:
     rolldown: bin/cli.mjs
   checksum: 10c0/699b8545a9a8b85ed4c639122163a6f46f84404fd88262bafa9549b01546744db625fd4425fceb4658c888de1671323170de1f837f6f6bb93e243e6e1d48c114
-  languageName: node
-  linkType: hard
-
-"scheduler@npm:^0.27.0":
-  version: 0.27.0
-  resolution: "scheduler@npm:0.27.0"
-  checksum: 10c0/4f03048cb05a3c8fddc45813052251eca00688f413a3cee236d984a161da28db28ba71bd11e7a3dd02f7af84ab28d39fb311431d3b3772fed557945beb00c452
   languageName: node
   linkType: hard
 
@@ -1627,7 +1546,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"typescript@npm:^5.8, typescript@npm:^5.8.2":
+"typescript@npm:^5.8.2":
   version: 5.9.3
   resolution: "typescript@npm:5.9.3"
   bin:
@@ -1637,7 +1556,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"typescript@patch:typescript@npm%3A^5.8#optional!builtin<compat/typescript>, typescript@patch:typescript@npm%3A^5.8.2#optional!builtin<compat/typescript>":
+"typescript@patch:typescript@npm%3A^5.8.2#optional!builtin<compat/typescript>":
   version: 5.9.3
   resolution: "typescript@patch:typescript@npm%3A5.9.3#optional!builtin<compat/typescript>::version=5.9.3&hash=5786d5"
   bin:
@@ -1661,7 +1580,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"vite@npm:^6.0.0 || ^7.0.0 || ^8.0.0, vite@npm:^8.0.0, vite@npm:^8.0.11":
+"vite@npm:^6.0.0 || ^7.0.0 || ^8.0.0, vite@npm:^8.0.11":
   version: 8.0.11
   resolution: "vite@npm:8.0.11"
   dependencies:
