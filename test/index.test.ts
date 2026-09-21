@@ -1,5 +1,5 @@
 import { test as fcTest, fc } from "@fast-check/vitest";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { removeAttributes } from "../src/index.js";
 
 const runTransform = async (
@@ -158,9 +158,21 @@ describe("plugin metadata", () => {
     expect(plugin.apply).toBeUndefined();
   });
 
-  it("respects custom enforce", () => {
-    const plugin = removeAttributes({ enforce: "post" }) as { enforce: string };
-    expect(plugin.enforce).toBe("post");
+  it("maps enforce: 'normal' to Vite's unenforced phase", () => {
+    const plugin = removeAttributes({ enforce: "normal" }) as { enforce: unknown };
+    expect(plugin.enforce).toBeUndefined();
+  });
+
+  it("warns about enforce: 'post' but still honours it", () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    try {
+      const plugin = removeAttributes({ enforce: "post" }) as { enforce: string };
+      expect(plugin.enforce).toBe("post");
+      expect(warn).toHaveBeenCalledOnce();
+      expect(warn.mock.calls[0]?.[0]).toMatch(/lowered to function calls/);
+    } finally {
+      warn.mockRestore();
+    }
   });
 });
 

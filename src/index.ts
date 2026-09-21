@@ -19,15 +19,22 @@ export interface RemoveAttributesOptions {
   /**
    * When this plugin runs in the Vite pipeline.
    *  - `'pre'` runs before other transforms — operates on raw JSX.
-   *  - `undefined` runs in the normal phase.
+   *  - `'normal'` runs in the normal phase, alongside unenforced plugins.
    *  - `'post'` runs after other transforms.
    *
    * Default `'pre'` so we see source JSX before React/oxc lowering. This
    * keeps the plugin runtime-agnostic (works with classic and automatic
    * JSX runtimes).
+   *
+   * `'post'` is almost never what you want: by then the JSX has usually been
+   * lowered to `jsx(...)` calls, leaving no `JSXAttribute` nodes to remove,
+   * so the plugin silently does nothing. It warns when you select it.
+   *
+   * Vite-only. Rolldown has no plugin ordering field, so this is ignored
+   * when the plugin is used with Rolldown directly.
    * @default 'pre'
    */
-  enforce?: "pre" | "post";
+  enforce?: "pre" | "normal" | "post";
 
   /**
    * When the plugin is active.
@@ -72,8 +79,20 @@ const DEFAULT_EXTENSIONS = [".tsx", ".jsx"];
 export const removeAttributes = (options: RemoveAttributesOptions = {}): Plugin => {
   const attributes = new Set(options.attributes ?? DEFAULT_ATTRIBUTES);
   const extensions = options.extensions ?? DEFAULT_EXTENSIONS;
-  const enforce = options.enforce ?? "pre";
+  const enforceOption = options.enforce ?? "pre";
   const applyOption = options.apply ?? "build";
+
+  if (enforceOption === "post") {
+    console.warn(
+      `[oxc-remove-attributes] enforce: "post" runs after JSX has been lowered to function calls, ` +
+        `so there are usually no JSXAttribute nodes left to remove and the plugin does nothing. ` +
+        `Use "pre" (the default) unless you have a transform that emits JSX.`,
+    );
+  }
+
+  // `'normal'` is this plugin's name for Vite's unenforced phase, which Vite
+  // itself spells as an absent `enforce`.
+  const enforce = enforceOption === "normal" ? undefined : enforceOption;
 
   const shouldProcess = (id: string) => {
     const path = id.split("?")[0]!;
