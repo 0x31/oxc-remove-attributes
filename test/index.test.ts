@@ -416,3 +416,39 @@ describe("regression: v0.1.1 fixes", () => {
     expect(result?.code).toBe(`const x = <div>hi</div>;`);
   });
 });
+
+describe("CRLF line endings", () => {
+  // `expandStart` has explicit \r\n handling: when an attribute sits on its own
+  // line, the whole line goes, including the carriage return, so no orphan \r
+  // is left behind to end up in the bundle.
+  it("removes the whole line, carriage return included", async () => {
+    const code = [
+      "const x = (",
+      "  <div",
+      '    data-testid="foo"',
+      '    className="bar"',
+      "  />",
+      ");",
+    ].join("\r\n");
+    const result = await runTransform(code);
+    expect(result).not.toBeNull();
+    expect(result?.code).not.toContain("data-testid");
+    // The attribute's line is gone entirely, leaving no blank line and no
+    // stray carriage return where it used to be.
+    expect(result?.code).toBe(
+      ["const x = (", "  <div", '    className="bar"', "  />", ");"].join("\r\n"),
+    );
+  });
+
+  it("keeps surrounding CRLF endings intact", async () => {
+    const code = [
+      "const a = 1;",
+      'const x = <div data-testid="foo" className="bar" />;',
+      "const b = 2;",
+    ].join("\r\n");
+    const result = await runTransform(code);
+    expect(result?.code).toBe(
+      ["const a = 1;", 'const x = <div className="bar" />;', "const b = 2;"].join("\r\n"),
+    );
+  });
+});
