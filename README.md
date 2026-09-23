@@ -33,11 +33,27 @@ import react from "@vitejs/plugin-react";
 import { removeAttributes } from "oxc-remove-attributes";
 
 export default defineConfig({
-  plugins: [react(), removeAttributes()],
+  plugins: [removeAttributes(), react()],
 });
 ```
 
 By default the plugin only runs during `vite build`, so `data-testid` attributes remain in dev and in `vite build --mode test` builds used by e2e suites.
+
+List `removeAttributes()` **before** `react()`. Both are `enforce: 'pre'` plugins, and Vite keeps array order within an enforce bucket, so this guarantees the plugin sees raw JSX. It matters when React Compiler is enabled (see below) and is harmless otherwise.
+
+### React Compiler
+
+`@vitejs/plugin-react` 6.1+ can run the React Compiler via `react({ compiler: true })`. That path hands the file to `oxc-transform-react`, which lowers JSX to `jsx()` calls as part of the same `enforce: 'pre'` transform. If `react()` comes first in the array, this plugin then receives code with no `JSXAttribute` nodes and removes nothing, leaving your test IDs in the production bundle.
+
+Putting `removeAttributes()` first fixes it:
+
+```ts
+export default defineConfig({
+  plugins: [removeAttributes(), react({ compiler: true })],
+});
+```
+
+The plugin warns if it sees a file that was already lowered, so the failure is not silent. This combination is covered by the integration tests.
 
 ## Options
 

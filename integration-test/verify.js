@@ -1,12 +1,17 @@
 import { readFile } from "node:fs/promises";
 
 const scenario = process.argv[2];
-if (scenario !== "strip" && scenario !== "mode-test") {
-  console.error(`usage: verify.js <strip|mode-test>`);
+if (scenario !== "strip" && scenario !== "mode-test" && scenario !== "compiler") {
+  console.error(`usage: verify.js <strip|mode-test|compiler>`);
   process.exit(2);
 }
 
-const distDir = scenario === "mode-test" ? "./dist-mode-test" : "./dist";
+const distDir =
+  scenario === "mode-test"
+    ? "./dist-mode-test"
+    : scenario === "compiler"
+      ? "./dist-compiler"
+      : "./dist";
 const built = await readFile(`${distDir}/out.js`, "utf-8");
 const map = JSON.parse(await readFile(`${distDir}/out.js.map`, "utf-8"));
 
@@ -15,7 +20,7 @@ console.log(`[${scenario}] built output: ${built.split("\n").length} lines, ${bu
 const failures = [];
 const forbidden = ['"data-testid"', "'data-testid'", '"data-cy"', "'data-cy'"];
 
-if (scenario === "strip") {
+if (scenario === "strip" || scenario === "compiler") {
   // Default `vite build`: target attributes must NOT survive in the bundle.
   for (const needle of forbidden) {
     if (built.includes(needle)) failures.push(`bundle still contains ${needle}`);
@@ -29,6 +34,14 @@ if (scenario === "strip") {
   // Spread + namespaced attributes should still be present.
   if (!built.match(/xlink:href|"xlink:href"/)) {
     failures.push("xlink:href namespaced attr was stripped (should be untouched)");
+  }
+
+  if (scenario === "compiler") {
+    // Confirms the React Compiler actually ran, so this leg is really
+    // covering the compiler pipeline and not silently falling back.
+    if (!built.includes("compiler-runtime") && !/_c\(\d/.test(built)) {
+      failures.push("React Compiler output not detected — this leg is not testing what it claims");
+    }
   }
 
   // Sourcemap should exist and have non-empty mappings.

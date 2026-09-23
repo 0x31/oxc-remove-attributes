@@ -82,6 +82,24 @@ export const removeAttributes = (options: RemoveAttributesOptions = {}): Plugin 
   const enforceOption = options.enforce ?? "pre";
   const applyOption = options.apply ?? "build";
 
+  // A file that still mentions a target attribute but has no JSX left, only
+  // jsx-runtime calls, was lowered by an earlier transform. Silently stripping
+  // nothing is the worst outcome for this plugin, so say so. Warn once per
+  // plugin instance rather than per file.
+  let warnedAboutLoweredJsx = false;
+  const warnIfJsxAlreadyLowered = (code: string, id: string, sawJsx: boolean) => {
+    if (warnedAboutLoweredJsx || sawJsx) return;
+    if (!/\b_?jsxs?(?:DEV)?\s*\(/.test(code)) return;
+
+    warnedAboutLoweredJsx = true;
+    console.warn(
+      `[oxc-remove-attributes] ${id} was already compiled to jsx() calls before this plugin ran, ` +
+        `so no attributes could be removed. Another plugin transformed it first: with ` +
+        `@vitejs/plugin-react's React Compiler (\`react({ compiler: true })\`), list ` +
+        `removeAttributes() before react() in your plugins array.`,
+    );
+  };
+
   if (enforceOption === "post") {
     console.warn(
       `[oxc-remove-attributes] enforce: "post" runs after JSX has been lowered to function calls, ` +
@@ -142,8 +160,11 @@ export const removeAttributes = (options: RemoveAttributesOptions = {}): Plugin 
 
       const s = new MagicString(code);
       let removed = false;
+      let sawJsx = false;
 
       visit(program, (node) => {
+        if (node.type.startsWith("JSX")) sawJsx = true;
+
         const attr = node as unknown as { name?: { type: string; name?: string } };
         if (
           node.type === "JSXAttribute" &&
@@ -156,7 +177,10 @@ export const removeAttributes = (options: RemoveAttributesOptions = {}): Plugin 
         }
       });
 
-      if (!removed) return null;
+      if (!removed) {
+        warnIfJsxAlreadyLowered(code, id, sawJsx);
+        return null;
+      }
       // `source` is the de-queried path so Sentry/devtools see `Foo.tsx`
       // rather than `Foo.tsx?used`. We deliberately don't set `file` — in
       // magic-string's API that's the path of the *generated* file, not

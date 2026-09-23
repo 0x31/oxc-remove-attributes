@@ -158,6 +158,46 @@ describe("plugin metadata", () => {
     expect(plugin.apply).toBeUndefined();
   });
 
+  it("warns when the file was already lowered to jsx() calls", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    try {
+      // What @vitejs/plugin-react's React Compiler emits when it runs first:
+      // no JSX left, so there is nothing for this plugin to remove.
+      const result = await runTransform(
+        `const x = /* @__PURE__ */ jsx("div", { "data-testid": "foo", className: "bar" });`,
+      );
+      expect(result).toBeNull();
+      expect(warn).toHaveBeenCalledOnce();
+      expect(warn.mock.calls[0]?.[0]).toMatch(/already compiled to jsx\(\) calls/);
+    } finally {
+      warn.mockRestore();
+    }
+  });
+
+  it("does not warn for a file that merely mentions the attribute in a string", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    try {
+      const result = await runTransform(`export const ATTR = "data-testid";`);
+      expect(result).toBeNull();
+      expect(warn).not.toHaveBeenCalled();
+    } finally {
+      warn.mockRestore();
+    }
+  });
+
+  it("does not warn when JSX is present but carries no target attribute", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    try {
+      // `data-testid` appears only as text, so nothing is removed, but the
+      // file plainly still has JSX and the plugin ran in the right place.
+      const result = await runTransform(`const x = <div>{"data-testid"}</div>;`);
+      expect(result).toBeNull();
+      expect(warn).not.toHaveBeenCalled();
+    } finally {
+      warn.mockRestore();
+    }
+  });
+
   it("maps enforce: 'normal' to Vite's unenforced phase", () => {
     const plugin = removeAttributes({ enforce: "normal" }) as { enforce: unknown };
     expect(plugin.enforce).toBeUndefined();

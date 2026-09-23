@@ -3,18 +3,22 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "npm run test:strip && npm run test:mode-test",
+    "test": "npm run test:strip && npm run test:mode-test && npm run test:compiler",
     "test:strip": "vite build && node verify.js strip",
-    "test:mode-test": "vite build --mode test --outDir dist-mode-test && node verify.js mode-test"
+    "test:mode-test": "vite build --mode test --outDir dist-mode-test && node verify.js mode-test",
+    "test:compiler": "vite build --config vite.config.compiler.js && node verify.js compiler"
   },
   "dependencies": {
     "@types/node": "^24",
     "@types/react": "^19",
-    "@vitejs/plugin-react": "^6.0.1",
+    "@vitejs/plugin-react": "^6.1.0",
     "oxc-remove-attributes": "portal:..",
     "react": "^19",
     "react-dom": "^19",
     "typescript": "^5.8",
     "vite": "^8.0.0"
+  },
+  "devDependencies": {
+    "oxc-transform-react": "^0.151.0"
   }
 }
