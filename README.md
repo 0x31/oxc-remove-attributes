@@ -104,10 +104,14 @@ react({
 });
 
 // After: @vitejs/plugin-react (oxc)
-(react(),
-  removeAttributes({
-    attributes: ["data-testid", "data-test", "data-test-id"],
-  }));
+defineConfig({
+  plugins: [
+    removeAttributes({
+      attributes: ["data-testid", "data-test", "data-test-id"],
+    }),
+    react(),
+  ],
+});
 ```
 
 Other differences worth knowing:
